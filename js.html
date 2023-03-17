@@ -261,8 +261,18 @@
             match()
             resizeSourceBox()
         })
+        
+        regexBox.addEventListener('keypress', ()=>{
+            match()
+            resizeSourceBox()
+        })
 
         replaceBox.addEventListener('keypress', ()=>{
+            match()
+            resizeSourceBox()
+        })
+        
+        replaceBox.addEventListener('keyup', ()=>{
             match()
             resizeSourceBox()
         })
