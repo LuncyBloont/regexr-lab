@@ -1,0 +1,13 @@
+const int& a;
+const int b;
+const float& c;
+const Val& d;
+int& e;
+double f;
+Val& g;
+this is a text file with some text in it, use it to test Regex.
+I have a cup with red. Do you like it?
+
+aaaabbaaabaaaaaaabbbbabbbbxbbbabgabb
+
+

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Regex</title>
+        <style>
+            .match {
+                background: #6ACE99;
+                color: #455594;
+            }
+            .pre {
+                white-space: break-spaces;
+            }
+            .fileInput {
+                border: 2pt solid #4577CA;
+                border-radius: 5pt;
+                background: none;
+                font-size: small;
+                padding: 2pt;
+                box-sizing: border-box;
+                min-width: 100pt;
+                display: inline-block;
+                text-align: center;
+                user-select: none;
+                cursor: pointer;
+            }
+            .fileInput:hover {
+                background: rgba(177, 200, 234, 0.3);
+            }
+            .input {
+                border-width: 0 0 1pt 0;
+                border-style: solid;
+                border-color: #3499A0;
+                padding: 3pt 3pt 3pt 3pt;
+                font-size: medium;
+                font-style: italic;
+                font-weight: bold;
+                color: #666666;
+                min-width: 256pt;
+                word-break: break-all;
+                display: inline-block;
+                max-width: 360pt;
+                box-sizing: border-box;
+                margin: 1pt 1pt 2pt 1pt;
+            }
+            .input:focus {
+                outline: none;
+                border-width: 0 0 2pt 0;
+                padding: 3pt;
+                margin: 1pt;
+            }
+            .anim {
+                transition: width,height ease 0.2s;
+            }
+            .textBox {
+                border: 2pt solid #999;
+                width: 100%;
+                box-sizing: border-box;
+                min-height: 320pt;
+                margin: 1pt;
+                padding: 3pt;
+                border-radius: 5pt;
+                position: relative;
+                top: 0;
+                overflow: hidden;
+                font-size: 14pt;
+                height: max-content;
+                font-weight: normal;
+                font-family: monospace;
+            }
+            .infoBox {
+                font-style: italic;
+                font-size: small;
+                color: red;
+                padding: 1pt 12pt;
+                margin: 2pt;
+            }
+            #rawTextarea {
+                resize: none;
+                width: 100%;
+                box-sizing: border-box;
+                min-height: 320pt;
+                margin: 1pt;
+                padding: 3pt;
+                border: 2pt solid #EAAA12;
+                border-radius: 5pt;
+                position: relative;
+                top: 0;
+                overflow: hidden;
+                font-size: 14pt;
+                height: max-content;
+                font-weight: normal;
+                font-family: monospace;
+            }
+            #rawTextarea:focus {
+                outline: none;
+                border-color: #FABA37;
+            }
+        </style>
+        <script>
+            let regexBox = null
+            let msgBox = null
+            let sourceBox = null
+            let outputBox = null
+
+            function match() {
+                if (!regexBox || !msgBox || !sourceBox || !outputBox) {
+                    return
+                }
+                try {
+                    let re = new RegExp(regexBox.innerText, 'g')
+                    let text = sourceBox.value
+                    if (regexBox.innerText.length > 0) {
+                        outputBox.innerText = text.replace(re, '\x02$&\x03')
+                        outputBox.innerHTML = outputBox.innerHTML.replace(/\x02/g, '<span class="match">')
+                        outputBox.innerHTML = outputBox.innerHTML.replace(/\x03/g, '</span>')
+                    } else {
+                        outputBox.innerText = text
+                    }
+                    msgBox.innerHTML = 'no error'
+                    msgBox.style.color = 'darkgreen'
+                } catch (err) {
+                    msgBox.innerHTML = err
+                    msgBox.style.color = 'red'
+                }
+            }
+        </script>
+    </head>
+    <body>
+    <div style="text-align: center">
+        <label for="fileInput" class="fileInput" id="fileLabel">choose a text file</label>
+        <input style="display: none" type="file" id="fileInput"/>
+        <label>your regex: </label>
+        <span class="input" contenteditable="true" id="regexInput"></span>
+        <br />
+        <div class="infoBox" id="msgDiv"></div>
+    </div>
+    <table style="width: 100%; table-layout: fixed">
+        <tr>
+            <td>
+                <div style="padding: 0; margin: 0">
+                    <label for="rawTextarea" style="display: none"></label>
+                    <textarea class="anim" id="rawTextarea"></textarea>
+                </div> 
+            </td>
+            <td>
+                <div style="margin: 0;" contenteditable="true" class="pre textBox anim" id="outputDiv"></div>
+            </td>
+        </tr>
+    </table>
+    
+    <div class="pre textBox" style="visibility: hidden; position: fixed;" id="temp"></div>
+
+    <script>
+        regexBox = document.getElementById('regexInput')
+        msgBox = document.getElementById('msgDiv')
+        sourceBox = document.getElementById('rawTextarea')
+        outputBox = document.getElementById('outputDiv')
+        let tempBox = document.getElementById('temp')
+        
+        function resizeSourceBox() {
+            tempBox.innerText = sourceBox.value + 'EE'
+            let height = tempBox.scrollHeight + 64
+            sourceBox.style.height = height + 'px'
+            outputBox.style.height = height + 'px'
+            
+        }
+
+        sourceBox.addEventListener('keyup', ()=>{
+            match()
+            resizeSourceBox()
+        })
+        
+        sourceBox.addEventListener('keypress', ()=>{
+            match()
+            resizeSourceBox()
+        })
+        
+        regexBox.addEventListener('keyup', ()=>{
+            match()
+        })
+
+        document.getElementById('fileInput').addEventListener('change', (fiEvent)=>{
+            let rd = new FileReader()
+            if (fiEvent.target.files?.length > 0) {
+                rd.addEventListener('load', ()=>{
+                    sourceBox.value = rd.result
+                    match()
+                    resizeSourceBox()
+                })
+                rd.readAsText(fiEvent.target.files[0], 'utf-8')
+                document.getElementById('fileLabel').innerHTML = 'file: ' + fiEvent.target.files[0].name
+            }
+        })
+        
+        match()
+        resizeSourceBox()
+        
+        let posDiff = 0
+        function setPos()
+        {
+            posDiff += sourceBox.getBoundingClientRect().y - outputBox.getBoundingClientRect().y
+            outputBox.style.transform = 'translateY(' + (posDiff) + 'px)'
+        }
+        
+        setInterval(setPos, 500)
+        setPos()
+
+    </script>
+    </body>
+</html>
+
