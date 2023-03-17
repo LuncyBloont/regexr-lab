@@ -5,8 +5,11 @@
         <title>Regex</title>
         <style>
             .match {
-                background: #6ACE99;
+                background: #8AFEB9;
                 color: #455594;
+                border-radius: 2pt;
+                outline: 1pt solid rgba(0, 0, 0, 0.1);
+                box-sizing: content-box;
             }
             .pre {
                 white-space: break-spaces;
@@ -57,7 +60,7 @@
                 width: 100%;
                 box-sizing: border-box;
                 min-height: 320pt;
-                margin: 1pt;
+                margin: 0;
                 padding: 3pt;
                 border-radius: 5pt;
                 position: relative;
@@ -67,6 +70,11 @@
                 height: max-content;
                 font-weight: normal;
                 font-family: monospace;
+                background: white;
+            }
+            .textBox:focus {
+                outline: none;
+                border-color: #78B892;
             }
             .infoBox {
                 font-style: italic;
@@ -76,11 +84,12 @@
                 margin: 2pt;
             }
             #rawTextarea {
+                display: block;
                 resize: none;
                 width: 100%;
                 box-sizing: border-box;
                 min-height: 320pt;
-                margin: 1pt;
+                margin: 0;
                 padding: 3pt;
                 border: 2pt solid #EAAA12;
                 border-radius: 5pt;
@@ -91,10 +100,50 @@
                 height: max-content;
                 font-weight: normal;
                 font-family: monospace;
+                background: white;
             }
             #rawTextarea:focus {
                 outline: none;
                 border-color: #FABA37;
+            }
+            td {
+                padding: 6pt;
+            }
+            .toggle {
+                border: 1pt solid #457585;
+                background: #FFEFCE;
+                display: inline-block;
+                text-align: center;
+                vertical-align: middle;
+                padding: 3pt;
+                box-sizing: border-box;
+                margin: auto 6pt;
+                border-radius: 3pt;
+                width: 10pt;
+                height: 10pt;
+                transition: all ease 0.1s;
+                opacity: 0.5;
+            }
+            .toggle-raw:checked + .toggle {
+                background: #67EF55;
+                width: 12pt;
+                height: 12pt;
+                margin: auto 5pt;
+                border-radius: 6pt;
+                opacity: 1.0;
+            }
+            .toggle-raw {
+                display: none;
+            }
+            .group {
+                background: #FCC8A5;
+                padding: 1pt 2pt;
+                border-radius: 3pt;
+            }
+            .groupID {
+                font-size: smaller;
+                vertical-align: top;
+                color: #78CCAA;
             }
         </style>
         <script>
@@ -102,16 +151,35 @@
             let msgBox = null
             let sourceBox = null
             let outputBox = null
+            let replaceBox = null
+            let repToggle = null
+            let matchBox = null
 
             function match() {
-                if (!regexBox || !msgBox || !sourceBox || !outputBox) {
+                if (!regexBox || !msgBox || !sourceBox || !outputBox ||
+                    !replaceBox || !repToggle || !matchBox) {
                     return
                 }
                 try {
                     let re = new RegExp(regexBox.innerText, 'g')
                     let text = sourceBox.value
+                    matchBox.innerHTML = ''
                     if (regexBox.innerText.length > 0) {
-                        outputBox.innerText = text.replace(re, '\x02$&\x03')
+                        let m = text.matchAll(re)
+                        for (const part of m) {
+                            let s = 'find: { '
+                            for (let i = 0; i < part.length; ++i) {
+                                s += '<span class="groupID">' + i + '</span>' + '<span class="group">' + part[i] + '</span> '
+                            }
+                            s += '} at ' + part.index + '<br />'
+                            matchBox.innerHTML += s
+                        }
+                        let rep = '$&'
+                        if (repToggle.checked)
+                        {
+                            rep = replaceBox.innerText
+                        }
+                        outputBox.innerText = text.replace(re, '\x02' + rep + '\x03')
                         outputBox.innerHTML = outputBox.innerHTML.replace(/\x02/g, '<span class="match">')
                         outputBox.innerHTML = outputBox.innerHTML.replace(/\x03/g, '</span>')
                     } else {
@@ -132,10 +200,14 @@
         <input style="display: none" type="file" id="fileInput"/>
         <label>your regex: </label>
         <span class="input" contenteditable="true" id="regexInput"></span>
+        replace to
+        <span class="input" contenteditable="true" id="replaceInput"></span>
+        <input class="toggle-raw" type="checkbox" name="replaceToggle" id="replaceToggle" />
+        <label for="replaceToggle" class="toggle"></label>
         <br />
         <div class="infoBox" id="msgDiv"></div>
     </div>
-    <table style="width: 100%; table-layout: fixed">
+    <table style="width: 95%; table-layout: fixed; margin: 3pt auto">
         <tr>
             <td>
                 <div style="padding: 0; margin: 0">
@@ -147,6 +219,11 @@
                 <div style="margin: 0;" contenteditable="true" class="pre textBox anim" id="outputDiv"></div>
             </td>
         </tr>
+        <tr>
+            <td colspan="2">
+                <div id="matchDiv" class="pre anim textBox" style="min-height: 36pt; border-color: #CCC; border-width: 2pt 0 0 0; border-radius: 0;"></div>
+            </td>
+        </tr>
     </table>
     
     <div class="pre textBox" style="visibility: hidden; position: fixed;" id="temp"></div>
@@ -156,14 +233,18 @@
         msgBox = document.getElementById('msgDiv')
         sourceBox = document.getElementById('rawTextarea')
         outputBox = document.getElementById('outputDiv')
+        matchBox = document.getElementById('matchDiv')
+        replaceBox = document.getElementById('replaceInput')
+        repToggle = document.getElementById('replaceToggle')
         let tempBox = document.getElementById('temp')
         
         function resizeSourceBox() {
             tempBox.innerText = sourceBox.value + 'EE'
             let height = tempBox.scrollHeight + 64
+            tempBox.innerText = outputBox.innerText + 'EE'
+            height = Math.max(height, tempBox.scrollHeight + 64)
             sourceBox.style.height = height + 'px'
             outputBox.style.height = height + 'px'
-            
         }
 
         sourceBox.addEventListener('keyup', ()=>{
@@ -178,6 +259,17 @@
         
         regexBox.addEventListener('keyup', ()=>{
             match()
+            resizeSourceBox()
+        })
+
+        replaceBox.addEventListener('keypress', ()=>{
+            match()
+            resizeSourceBox()
+        })
+        
+        repToggle.addEventListener('change', ()=>{
+            match()
+            resizeSourceBox()
         })
 
         document.getElementById('fileInput').addEventListener('change', (fiEvent)=>{
